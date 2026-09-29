@@ -71,6 +71,23 @@ def index_page():
     """Ana sayfa: Kim Boş? sorgu paneli"""
     return render_template('index.html')
 
+@app.route('/api/index.py')
+@app.route('/api/index')
+def vercel_index_redirect():
+    """Vercel rewrite veya doğrudan fonksiyon çağrılarında ana sayfaya yönlendir"""
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    return redirect(url_for('index_page'))
+
+@app.errorhandler(404)
+def handle_404(e):
+    """Tanımlanamayan yollarda hata sayfası yerine kullanıcıyı ana/giriş sayfasına yönlendir"""
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Endpoint bulunamadı'}), 404
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    return redirect(url_for('index_page'))
+
 @app.route('/login')
 def login_page():
     if 'user_id' in session:
