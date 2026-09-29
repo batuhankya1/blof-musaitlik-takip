@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Blöf-MüsaitlikTakip - Arkadaş Ders ve Müsaitlik Sistemi{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="flex items-center space-x-2.5 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-brand-700 bg-clip-text text-transparent">Blöf-MüsaitlikTakip</span>
+                            <span class="hidden sm:inline-block ml-1 text-xs font-semibold px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full border border-brand-200">Grup</span>
+                        </div>
+                    </a>
+                </div>
+
+                {% if current_user %}
+                <!-- Desktop Nav Links -->
+                <nav class="hidden md:flex items-center space-x-1">
+                    <a href="/" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2 {% if request.path == '/' %}bg-brand-50 text-brand-700{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Kim Boş?</span>
+                    </a>
+                    <a href="/schedule" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2 {% if request.path == '/schedule' %}bg-brand-50 text-brand-700{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span>Programım</span>
+                    </a>
+                    <a href="/group-calendar" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2 {% if request.path == '/group-calendar' %}bg-brand-50 text-brand-700{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                        <span>Ortak Takvim</span>
+                    </a>
+                    <a href="/friends" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2 {% if request.path == '/friends' %}bg-brand-50 text-brand-700{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+                        <i class="fa-solid fa-user-group"></i>
+                        <span>Arkadaşlar</span>
+                    </a>
+                </nav>
+
+                <!-- User Profile & Action -->
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-full">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm" style="background-color: {{ current_user.avatar_color or '#4F46E5' }};">
+                            {{ current_user.name[:2].upper() }}
+                        </div>
+                        <span class="text-sm font-semibold text-slate-800">{{ current_user.name }}</span>
+                    </div>
+
+                    <a href="/logout" title="Çıkış Yap" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="flex items-center space-x-2">
+                    <a href="/login" class="px-4 py-2 text-sm font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition">Giriş Yap</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 pb-20 md:pb-10">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user %}
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 z-40 flex justify-around items-center shadow-lg">
+        <a href="/" class="flex flex-col items-center py-1 px-3 text-xs font-semibold {% if request.path == '/' %}text-brand-600{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+            <i class="fa-solid fa-clock text-base mb-1"></i>
+            <span>Kim Boş?</span>
+        </a>
+        <a href="/schedule" class="flex flex-col items-center py-1 px-3 text-xs font-semibold {% if request.path == '/schedule' %}text-brand-600{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+            <i class="fa-regular fa-calendar-check text-base mb-1"></i>
+            <span>Programım</span>
+        </a>
+        <a href="/group-calendar" class="flex flex-col items-center py-1 px-3 text-xs font-semibold {% if request.path == '/group-calendar' %}text-brand-600{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+            <i class="fa-solid fa-users-viewfinder text-base mb-1"></i>
+            <span>Ortak</span>
+        </a>
+        <a href="/friends" class="flex flex-col items-center py-1 px-3 text-xs font-semibold {% if request.path == '/friends' %}text-brand-600{% else %}text-slate-500 hover:text-slate-800{% endif %}">
+            <i class="fa-solid fa-user-group text-base mb-1"></i>
+            <span>Arkadaşlar</span>
+        </a>
+    </nav>
+    {% endif %}
+
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Friend Timetable Modal (Reused across views) -->
+    <div id="friendModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center space-x-3">
+                    <div id="modalUserAvatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"></div>
+                    <div>
+                        <h3 id="modalUserName" class="text-lg font-bold text-slate-900">Arkadaş Ders Programı</h3>
+                        <p id="modalUserSubtitle" class="text-xs text-slate-500">Haftalık ders tablosu</p>
+                    </div>
+                </div>
+                <button onclick="closeFriendModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1" id="modalScheduleContent">
+                <!-- Dynamically populated timetable -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Base JS -->
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgClasses = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                warning: 'bg-amber-500 text-white',
+                info: 'bg-slate-900 text-white'
+            };
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-triangle-exclamation',
+                warning: 'fa-circle-exclamation',
+                info: 'fa-circle-info'
+            };
+
+            toast.className = `${bgClasses[type] || bgClasses.info} px-4 py-3 rounded-xl shadow-lg flex items-center space-x-3 text-sm font-medium pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        async function openFriendScheduleModal(userId, userName, avatarColor) {
+            const modal = document.getElementById('friendModal');
+            const avatar = document.getElementById('modalUserAvatar');
+            const nameEl = document.getElementById('modalUserName');
+            const subEl = document.getElementById('modalUserSubtitle');
+            const content = document.getElementById('modalScheduleContent');
+
+            avatar.style.backgroundColor = avatarColor || '#4F46E5';
+            avatar.textContent = (userName || '??').substring(0, 2).toUpperCase();
+            nameEl.textContent = `${userName} - Ders Programı`;
+            subEl.textContent = 'Haftalık dersler ve saatleri yükleniyor...';
+            content.innerHTML = '<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>Program yükleniyor...</p></div>';
+            modal.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`/api/schedule/${userId}`);
+                const data = await res.json();
+                if (data.classes && data.classes.length > 0) {
+                    subEl.textContent = `Toplam ${data.classes.length} ders saati`;
+                    renderFriendTimetable(data.classes, content);
+                } else {
+                    subEl.textContent = 'Program boş';
+                    content.innerHTML = `
+                        <div class="py-12 text-center text-slate-400">
+                            <i class="fa-regular fa-calendar-xmark text-4xl mb-3 text-slate-300"></i>
+                            <p class="font-medium text-slate-600">${userName} henüz ders programı eklememiş.</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                content.innerHTML = '<p class="text-rose-500 text-center py-8">Ders programı yüklenirken hata oluştu.</p>';
+            }
+        }
+
+        function closeFriendModal() {
+            document.getElementById('friendModal').classList.add('hidden');
+        }
+
+        function renderFriendTimetable(classes, container) {
+            const days = [
+                { idx: 0, name: "Pazartesi" },
+                { idx: 1, name: "Salı" },
+                { idx: 2, name: "Çarşamba" },
+                { idx: 3, name: "Perşembe" },
+                { idx: 4, name: "Cuma" },
+                { idx: 5, name: "Cumartesi" },
+                { idx: 6, name: "Pazar" }
+            ];
+
+            let html = '<div class="grid grid-cols-1 md:grid-cols-5 gap-3">';
+            // Hafta içi ilk 5 gün göster, cmt/pazarda ders varsa onları da ekle
+            const hasWeekend = classes.some(c => c.day_index >= 5);
+            const displayDays = hasWeekend ? days : days.slice(0, 5);
+
+            displayDays.forEach(day => {
+                const dayClasses = classes.filter(c => c.day_index === day.idx).sort((a,b) => a.start_time.localeCompare(b.start_time));
+                html += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col">
+                        <div class="font-bold text-sm text-slate-800 pb-2 mb-2 border-b border-slate-200 flex items-center justify-between">
+                            <span>${day.name}</span>
+                            <span class="text-xs bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">${dayClasses.length}</span>
+                        </div>
+                        <div class="space-y-2 flex-1">
+                `;
+
+                if (dayClasses.length === 0) {
+                    html += `<div class="py-6 text-center text-xs text-slate-400 font-medium">Ders yok 🎉</div>`;
+                } else {
+                    dayClasses.forEach(c => {
+                        html += `
+                            <div class="p-2.5 rounded-lg border text-left shadow-xs transition hover:shadow-sm" style="background-color: ${c.color || '#3b82f6'}12; border-color: ${c.color || '#3b82f6'}40;">
+                                <div class="text-xs font-bold" style="color: ${c.color || '#3b82f6'};">
+                                    <i class="fa-regular fa-clock mr-1"></i>${c.start_time} - ${c.end_time}
+                                </div>
+                                <div class="text-sm font-semibold text-slate-900 mt-1 line-clamp-2">${c.title}</div>
+                                ${c.location ? `<div class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i>${c.location}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `</div></div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

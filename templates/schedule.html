@@ -1,0 +1,894 @@
+{% extends 'base.html' %}
+
+{% block title %}Ders Programım - Blöf-MüsaitlikTakip{% endblock %}
+
+{% block extra_head %}
+<!-- Tesseract.js for zero-config client-side OCR parsing -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+    
+    <!-- Top Header -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold border border-brand-200 mb-2">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Kişisel Haftalık Program</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Ders Programım ve Düzenleyici
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">
+                    Ders programınızın ekran görüntüsünü yükleyebilir, metin yapıştırabilir veya derslerinizi elle ekleyebilirsiniz.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button onclick="openUploadModal()" class="px-4 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-500/20 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Görsel / Ekran Görüntüsü Yükle</span>
+                </button>
+                <button onclick="openAddClassModal()" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Ders Ekle</span>
+                </button>
+                <button onclick="openPresetsModal()" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition flex items-center space-x-1.5" title="Hazır Şablonlar">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span class="hidden sm:inline">Şablonlar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Onboarding Notice Banner (If first time) -->
+        <div id="onboardingBanner" class="hidden mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start space-x-3">
+            <div class="text-amber-600 text-xl mt-0.5"><i class="fa-solid fa-sparkles"></i></div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-amber-900">Hoş Geldiniz! İlk olarak ders programınızı oluşturun</h4>
+                <p class="text-xs text-amber-700 mt-0.5">
+                    Arkadaşlarınızın ne zaman boş olduğunuzu görebilmesi için programınızı yükleyin. Yukarıdaki "Görsel / Ekran Görüntüsü Yükle" butonunu kullanabilir veya hazır örnek programlardan birini seçebilirsiniz.
+                </p>
+            </div>
+            <button onclick="document.getElementById('onboardingBanner').remove()" class="text-amber-400 hover:text-amber-700"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <!-- WEEKLY TIMETABLE GRID -->
+    <div class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-200">
+        <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200">
+            <div class="flex items-center space-x-3">
+                <h2 class="text-lg font-bold text-slate-900">Haftalık Ders Dağılımı</h2>
+                <span id="classCountBadge" class="text-xs font-bold px-2.5 py-0.5 bg-brand-100 text-brand-800 rounded-full">
+                    0 Ders
+                </span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="clearAllClasses()" class="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-regular fa-trash-can mr-1"></i> Tümünü Temizle
+                </button>
+            </div>
+        </div>
+
+        <!-- Weekly Grid Columns (Pazartesi - Cuma / Pazar) -->
+        <div id="weeklyGridContainer" class="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-5 gap-4">
+            <!-- Populated dynamically by day -->
+        </div>
+
+        <div id="emptySchedulePlaceholder" class="hidden py-16 text-center">
+            <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-regular fa-calendar-plus"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Ders programınız henüz boş</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                Ders programınızın fotoğrafını/ekran görüntüsünü yükleyebilir veya "+ Ders Ekle" butonuna basarak derslerinizi girebilirsiniz.
+            </p>
+            <div class="mt-5 flex justify-center space-x-3">
+                <button onclick="openUploadModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-camera mr-1.5"></i> Ekran Görüntüsü Yükle
+                </button>
+                <button onclick="openAddClassModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Manuel Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL 1: GÖRSEL / EKRAN GÖRÜNTÜSÜ YÜKLEME MODALI -->
+<div id="uploadModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Ders Programı Ekran Görüntüsü Yükle</h3>
+                    <p class="text-xs text-slate-500">Üniversite OBS veya haftalık ders çizelgesi fotoğrafı</p>
+                </div>
+            </div>
+            <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-6">
+            
+            <!-- Method Tabs -->
+            <div class="flex border-b border-slate-200">
+                <button id="tabImgUpload" onclick="switchUploadMethod('image')" class="pb-2.5 px-4 font-bold text-xs border-b-2 border-brand-600 text-brand-600">
+                    <i class="fa-solid fa-image mr-1"></i> Görsel / Ekran Görüntüsü
+                </button>
+                <button id="tabPasteText" onclick="switchUploadMethod('text')" class="pb-2.5 px-4 font-bold text-xs border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-paste mr-1"></i> Metin / OBS Kopyala-Yapıştır
+                </button>
+            </div>
+
+            <!-- TAB 1: IMAGE / SCREENSHOT -->
+            <div id="methodImageContainer" class="space-y-4">
+                <div id="dropZone" onclick="document.getElementById('scheduleFileInput').click()"
+                     class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-8 text-center cursor-pointer bg-slate-50/50 hover:bg-brand-50/20 transition group">
+                    <input type="file" id="scheduleFileInput" accept="image/*" class="hidden" onchange="handleFileSelected(event)">
+                    <div class="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center mx-auto text-brand-600 group-hover:scale-110 transition-transform mb-3">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800">Ders programı görselini sürükleyin veya seçin</h4>
+                    <p class="text-xs text-slate-400 mt-1">PNG, JPG, WebP veya Ekran Görüntüsü (Ctrl+V ile de yapıştırabilirsiniz)</p>
+                </div>
+
+                <!-- Preview Area -->
+                <div id="imagePreviewContainer" class="hidden border border-slate-200 rounded-xl p-3 bg-slate-50 flex items-center space-x-4">
+                    <img id="imagePreviewImg" class="w-20 h-20 object-cover rounded-lg border border-slate-300" src="" alt="Önizleme">
+                    <div class="flex-1 min-w-0">
+                        <p id="imagePreviewName" class="text-xs font-bold text-slate-800 truncate"></p>
+                        <p id="imagePreviewSize" class="text-[11px] text-slate-400"></p>
+                    </div>
+                    <button onclick="clearSelectedImage()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">Kaldır</button>
+                </div>
+
+                <!-- Automatic AI Vision Badge -->
+                <div class="bg-gradient-to-r from-indigo-50 to-brand-50 border border-brand-200 rounded-xl p-3.5 flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-sparkles text-sm"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-extrabold text-brand-900 block">
+                            Otomatik Yapay Zeka (Gemini Vision) Aktif
+                        </span>
+                        <p class="text-[11px] text-brand-700">
+                            Yüklediğiniz çizelge (SUIS, OBS vb.) doğrudan sistem yapay zekası ile okunur. Ek bir ayar yapmanıza gerek yoktur.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Parsing Process Indicators -->
+                <div id="parseLoadingIndicator" class="hidden p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-2">
+                    <div class="inline-block animate-spin text-brand-600 text-2xl">
+                        <i class="fa-solid fa-circle-notch"></i>
+                    </div>
+                    <p id="parseLoadingText" class="text-xs font-bold text-slate-700">Görsel taranıyor ve dersler çıkarılıyor...</p>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div id="parseProgressBar" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TEXT / OBS COPY-PASTE -->
+            <div id="methodTextContainer" class="space-y-3 hidden">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-700">OBS veya Ders Bilgi Sisteminden Kopyalanan Metin:</label>
+                    <button type="button" onclick="fillSampleSuisText()" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg transition">
+                        <i class="fa-solid fa-file-invoice mr-1"></i> Sabancı (SUIS) Örnek Metni Ekle
+                    </button>
+                </div>
+                <textarea id="pasteTextArea" rows="8" placeholder="Örnek Sabancı / Banner Formatı:&#10;Monday&#10;MATH 203R-B4&#10;13053 Class&#10;9:40 am-10:30 am&#10;FENS G015&#10;&#10;Veya Standart Format:&#10;Pazartesi 09:00 - 11:50 Algoritmalar Lab 3"
+                          class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden"></textarea>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Gün adı ve saat aralığı (AM/PM veya 24h) içeren satırlar otomatik algılanır.</span>
+                    <button type="button" onclick="loadPresetSchedule('sabanci'); closeUploadModal();" class="text-emerald-600 hover:text-emerald-800 font-bold">
+                        ⚡ Direkt 16 Dersi Yükle
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <button onclick="closeUploadModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800">Vazgeç</button>
+            <button id="processUploadBtn" onclick="processUpload()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Dersleri Çıkar ve Ekle</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: MANUEL DERS EKLE / DÜZENLE -->
+<div id="classModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <h3 id="classModalTitle" class="text-base font-bold text-slate-900">Ders Ekle</h3>
+            <button onclick="closeClassModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+
+        <form id="classForm" onsubmit="saveClassForm(event)" class="p-6 space-y-4">
+            <input type="hidden" id="formClassId" value="">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Ders Adı *</label>
+                <input type="text" id="formTitle" required placeholder="Örn: Yapay Zeka, Anatomi, Mikroiktisat..."
+                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Gün *</label>
+                <select id="formDayIndex" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden">
+                    <option value="0">Pazartesi</option>
+                    <option value="1">Salı</option>
+                    <option value="2">Çarşamba</option>
+                    <option value="3">Perşembe</option>
+                    <option value="4">Cuma</option>
+                    <option value="5">Cumartesi</option>
+                    <option value="6">Pazar</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Başlangıç Saati *</label>
+                    <input type="time" id="formStartTime" required value="09:00"
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Bitiş Saati *</label>
+                    <input type="time" id="formEndTime" required value="10:50"
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Derslik / Lokasyon (Opsiyonel)</label>
+                <input type="text" id="formLocation" placeholder="Örn: Amfi 2, D104, Online..."
+                       class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-hidden">
+            </div>
+
+            <!-- Color Tag -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Etiket Rengi</label>
+                <div class="flex items-center space-x-2" id="colorPickerContainer">
+                    <!-- Populated by JS -->
+                </div>
+                <input type="hidden" id="formColor" value="#3B82F6">
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" id="deleteClassBtn" onclick="deleteCurrentClass()" class="hidden text-xs font-bold text-rose-600 hover:text-rose-800">
+                    <i class="fa-regular fa-trash-can mr-1"></i> Bu Dersi Sil
+                </button>
+                <div class="flex items-center space-x-2 ml-auto">
+                    <button type="button" onclick="closeClassModal()" class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-800">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition">Kaydet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 3: HAZIR ŞABLONLAR MODALI -->
+<div id="presetsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <h3 class="text-base font-bold text-slate-900">Hazır Üniversite Programları</h3>
+            <button onclick="closePresetsModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-3">
+            <p class="text-xs text-slate-500 mb-3">Sistemi hemen denemek için hazır bir üniversite programı yükleyin:</p>
+            <!-- Sabancı SUIS Preset -->
+            <button onclick="loadPresetSchedule('sabanci')" class="w-full p-3.5 rounded-xl border-2 border-brand-500 bg-brand-50/50 hover:bg-brand-50 text-left transition flex items-center justify-between shadow-xs">
+                <div>
+                    <div class="text-sm font-extrabold text-brand-900 flex items-center">
+                        <i class="fa-solid fa-star text-amber-500 mr-1.5 text-xs"></i>
+                        Sabancı Üniversitesi (SUIS) Programı
+                    </div>
+                    <div class="text-xs text-brand-700 mt-0.5">Yüklediğiniz çizelgedeki 16 ders (MATH, CS, HUM, DSA)</div>
+                </div>
+                <span class="text-xs font-bold px-2 py-0.5 bg-brand-600 text-white rounded-md">Önerilen</span>
+            </button>
+            <button onclick="loadPresetSchedule('muhendislik')" class="w-full p-3.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 text-left transition flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-bold text-slate-800">Mühendislik Fakültesi</div>
+                    <div class="text-xs text-slate-500">Algoritmalar, Fizik, Diferansiyel, Devreler</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+            </button>
+            <button onclick="loadPresetSchedule('tip')" class="w-full p-3.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 text-left transition flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-bold text-slate-800">Tıp Fakültesi</div>
+                    <div class="text-xs text-slate-500">Anatomi, Biyokimya, Histoloji, Fizyoloji</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+            </button>
+            <button onclick="loadPresetSchedule('hukuk')" class="w-full p-3.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 text-left transition flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-bold text-slate-800">Hukuk Fakültesi</div>
+                    <div class="text-xs text-slate-500">Anayasa, Medeni Hukuk, Ceza Hukuku, Roma</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const DAYS_DATA = [
+        { index: 0, name: "Pazartesi" },
+        { index: 1, name: "Salı" },
+        { index: 2, name: "Çarşamba" },
+        { index: 3, name: "Perşembe" },
+        { index: 4, name: "Cuma" },
+        { index: 5, name: "Cumartesi" },
+        { index: 6, name: "Pazar" }
+    ];
+
+    const PALETTE = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#6366F1'];
+
+    let myClasses = [];
+    let selectedImageFile = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initColorPicker();
+        loadMySchedule();
+        checkOnboarding();
+        setupClipboardPaste();
+    });
+
+    function checkOnboarding() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('onboarding') === '1') {
+            document.getElementById('onboardingBanner').classList.remove('hidden');
+        }
+    }
+
+    function initColorPicker() {
+        const container = document.getElementById('colorPickerContainer');
+        container.innerHTML = '';
+        PALETTE.forEach(c => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `w-6 h-6 rounded-full border-2 transition-transform ${c === '#3B82F6' ? 'scale-125 border-slate-900' : 'border-transparent'}`;
+            btn.style.backgroundColor = c;
+            btn.onclick = () => selectFormColor(c, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectFormColor(hex, btn) {
+        document.getElementById('formColor').value = hex;
+        const allBtns = document.getElementById('colorPickerContainer').children;
+        for (let b of allBtns) {
+            b.classList.remove('scale-125', 'border-slate-900');
+            b.classList.add('border-transparent');
+        }
+        btn.classList.add('scale-125', 'border-slate-900');
+        btn.classList.remove('border-transparent');
+    }
+
+    async function loadMySchedule() {
+        try {
+            const res = await fetch('/api/schedule');
+            const data = await res.json();
+            myClasses = data.classes || [];
+            renderWeeklySchedule();
+        } catch (err) {
+            showToast('Program yüklenirken hata oluştu.', 'error');
+        }
+    }
+
+    function renderWeeklySchedule() {
+        const container = document.getElementById('weeklyGridContainer');
+        const emptyPlaceholder = document.getElementById('emptySchedulePlaceholder');
+        const badge = document.getElementById('classCountBadge');
+
+        badge.textContent = `${myClasses.length} Ders`;
+
+        if (myClasses.length === 0) {
+            container.innerHTML = '';
+            emptyPlaceholder.classList.remove('hidden');
+            return;
+        }
+
+        emptyPlaceholder.classList.add('hidden');
+        container.innerHTML = '';
+
+        // Hafta içi ilk 5 gün göster, cmt/pazarda ders varsa 7 gün göster
+        const hasWeekend = myClasses.some(c => c.day_index >= 5);
+        const displayDays = hasWeekend ? DAYS_DATA : DAYS_DATA.slice(0, 5);
+
+        // Grid sütun sayısını ayarla
+        container.className = `grid grid-cols-1 md:grid-cols-${displayDays.length} gap-4`;
+
+        displayDays.forEach(day => {
+            const dayClasses = myClasses.filter(c => c.day_index === day.index).sort((a,b) => a.start_time.localeCompare(b.start_time));
+            
+            const col = document.createElement('div');
+            col.className = "bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 flex flex-col";
+
+            let classesHtml = '';
+            if (dayClasses.length === 0) {
+                classesHtml = `
+                    <div class="py-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center space-y-1">
+                        <i class="fa-solid fa-mug-hot text-lg text-slate-300"></i>
+                        <span>Ders yok (Boş Gün)</span>
+                    </div>
+                `;
+            } else {
+                dayClasses.forEach(c => {
+                    classesHtml += `
+                        <div onclick="editClass(${c.id})"
+                             class="group cursor-pointer p-3 rounded-xl border text-left shadow-xs transition hover:shadow-md hover:scale-[1.02] relative"
+                             style="background-color: ${c.color || '#3B82F6'}15; border-color: ${c.color || '#3B82F6'}50;">
+                            <div class="text-[11px] font-extrabold flex items-center justify-between" style="color: ${c.color || '#3B82F6'};">
+                                <span><i class="fa-regular fa-clock mr-1"></i>${c.start_time} - ${c.end_time}</span>
+                                <i class="fa-solid fa-pen text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-2">${c.title}</div>
+                            ${c.location ? `<div class="text-[10px] text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i>${c.location}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            col.innerHTML = `
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-200">
+                    <span class="font-extrabold text-sm text-slate-800">${day.name}</span>
+                    <button onclick="openAddClassModalForDay(${day.index})" title="Bu güne ders ekle"
+                            class="w-6 h-6 rounded-lg bg-slate-200 hover:bg-brand-600 hover:text-white text-slate-600 flex items-center justify-center text-xs transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div class="space-y-2 flex-1">
+                    ${classesHtml}
+                </div>
+            `;
+
+            container.appendChild(col);
+        });
+    }
+
+    // Modal Operations
+    function openUploadModal() {
+        document.getElementById('uploadModal').classList.remove('hidden');
+    }
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.add('hidden');
+    }
+
+    function switchUploadMethod(method) {
+        const imgTab = document.getElementById('tabImgUpload');
+        const txtTab = document.getElementById('tabPasteText');
+        const imgCont = document.getElementById('methodImageContainer');
+        const txtCont = document.getElementById('methodTextContainer');
+
+        if (method === 'image') {
+            imgTab.className = "pb-2.5 px-4 font-bold text-xs border-b-2 border-brand-600 text-brand-600";
+            txtTab.className = "pb-2.5 px-4 font-bold text-xs border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+            imgCont.classList.remove('hidden');
+            txtCont.classList.add('hidden');
+        } else {
+            txtTab.className = "pb-2.5 px-4 font-bold text-xs border-b-2 border-brand-600 text-brand-600";
+            imgTab.className = "pb-2.5 px-4 font-bold text-xs border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+            txtCont.classList.remove('hidden');
+            imgCont.classList.add('hidden');
+        }
+    }
+
+    function handleFileSelected(e) {
+        const file = e.target.files[0];
+        if (file) setPreviewFile(file);
+    }
+
+    function setPreviewFile(file) {
+        selectedImageFile = file;
+        const container = document.getElementById('imagePreviewContainer');
+        const img = document.getElementById('imagePreviewImg');
+        const name = document.getElementById('imagePreviewName');
+        const size = document.getElementById('imagePreviewSize');
+
+        name.textContent = file.name;
+        size.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+            container.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage() {
+        selectedImageFile = null;
+        document.getElementById('scheduleFileInput').value = '';
+        document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    function setupClipboardPaste() {
+        window.addEventListener('paste', e => {
+            if (document.getElementById('uploadModal').classList.contains('hidden')) return;
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let item of items) {
+                if (item.kind === 'file' && item.type.includes('image/')) {
+                    const blob = item.getAsFile();
+                    setPreviewFile(blob);
+                    switchUploadMethod('image');
+                    showToast('Görsel panodan yapıştırıldı!', 'success');
+                    break;
+                }
+            }
+        });
+    }
+
+    async function processUpload() {
+        const isText = !document.getElementById('methodTextContainer').classList.contains('hidden');
+        const btn = document.getElementById('processUploadBtn');
+
+        if (isText) {
+            const rawText = document.getElementById('pasteTextArea').value.trim();
+            if (!rawText) {
+                showToast('Lütfen ders programı metnini yapıştırın.', 'warning');
+                return;
+            }
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/schedule/parse-text', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ text: rawText })
+                });
+                const data = await res.json();
+                if (res.ok && data.classes) {
+                    await saveImportedClasses(data.classes);
+                    closeUploadModal();
+                } else {
+                    showToast(data.error || 'Ayrıştırma başarısız.', 'error');
+                }
+            } catch (err) {
+                showToast('Sunucu hatası oluştu.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        } else {
+            // Image Processing
+            if (!selectedImageFile) {
+                showToast('Lütfen önce bir görsel seçin veya yapıştırın.', 'warning');
+                return;
+            }
+
+            const loadingIndicator = document.getElementById('parseLoadingIndicator');
+            const progress = document.getElementById('parseProgressBar');
+            const loadText = document.getElementById('parseLoadingText');
+
+            loadingIndicator.classList.remove('hidden');
+            progress.style.width = '30%';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', selectedImageFile);
+
+            try {
+                loadText.textContent = 'Yapay zeka (Gemini Vision) ile görsel taranıyor...';
+                progress.style.width = '65%';
+
+                const res = await fetch('/api/schedule/parse-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok && data.classes && data.classes.length > 0) {
+                    progress.style.width = '100%';
+                    showToast(data.message, 'success');
+                    await saveImportedClasses(data.classes);
+                    closeUploadModal();
+                    return;
+                } else {
+                    showToast(data.error || 'Görsel okunamadı.', 'error');
+                }
+            } catch (err) {
+                showToast('Görsel işlenirken sunucu bağlantı hatası oluştu.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+    }
+
+    async function runBrowserOCR() {
+        const loadText = document.getElementById('parseLoadingText');
+        const progress = document.getElementById('parseProgressBar');
+        try {
+            loadText.textContent = 'OCR motoru çalışıyor (İngilizce/Türkçe destekli)...';
+            progress.style.width = '75%';
+
+            const worker = await Tesseract.createWorker(['eng', 'tur']);
+            const ret = await worker.recognize(selectedImageFile);
+            await worker.terminate();
+
+            const extractedText = ret.data.text;
+            progress.style.width = '90%';
+
+            // Metni server regex ayrıştırıcısına gönder
+            const res = await fetch('/api/schedule/parse-text', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text: extractedText })
+            });
+            const data = await res.json();
+            if (res.ok && data.classes && data.classes.length > 0) {
+                await saveImportedClasses(data.classes);
+                closeUploadModal();
+                showToast(`OCR ile ${data.classes.length} ders tespit edildi!`, 'success');
+            } else {
+                showToast('Görsel çözünürlüğü düşük olduğu için net okunamadı. İpucu: Şablonlardan "Sabancı SUIS" seçebilir veya metin olarak yapıştırabilirsiniz.', 'warning');
+            }
+        } catch (err) {
+            showToast('OCR hatası: Lütfen dersleri metinle girin veya Gemini API anahtarı ekleyin.', 'error');
+        } finally {
+            document.getElementById('parseLoadingIndicator').classList.add('hidden');
+            document.getElementById('processUploadBtn').disabled = false;
+        }
+    }
+
+    async function saveImportedClasses(newClasses) {
+        // Mevcut derslere ekle veya güncelle
+        const merged = [...myClasses, ...newClasses];
+        const res = await fetch('/api/schedule', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ classes: merged })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            myClasses = data.classes;
+            renderWeeklySchedule();
+            showToast(`${newClasses.length} ders programınıza eklendi!`, 'success');
+        }
+    }
+
+    // Modal 2: Add/Edit Class
+    function openAddClassModal() {
+        document.getElementById('classModalTitle').textContent = 'Yeni Ders Ekle';
+        document.getElementById('formClassId').value = '';
+        document.getElementById('formTitle').value = '';
+        document.getElementById('formLocation').value = '';
+        document.getElementById('deleteClassBtn').classList.add('hidden');
+        document.getElementById('classModal').classList.remove('hidden');
+    }
+
+    function openAddClassModalForDay(dayIndex) {
+        openAddClassModal();
+        document.getElementById('formDayIndex').value = dayIndex;
+    }
+
+    function editClass(classId) {
+        const cls = myClasses.find(c => c.id === classId);
+        if (!cls) return;
+
+        document.getElementById('classModalTitle').textContent = 'Dersi Düzenle';
+        document.getElementById('formClassId').value = cls.id;
+        document.getElementById('formTitle').value = cls.title;
+        document.getElementById('formDayIndex').value = cls.day_index;
+        document.getElementById('formStartTime').value = cls.start_time;
+        document.getElementById('formEndTime').value = cls.end_time;
+        document.getElementById('formLocation').value = cls.location || '';
+        document.getElementById('formColor').value = cls.color || '#3B82F6';
+
+        document.getElementById('deleteClassBtn').classList.remove('hidden');
+        document.getElementById('classModal').classList.remove('hidden');
+    }
+
+    function closeClassModal() {
+        document.getElementById('classModal').classList.add('hidden');
+    }
+
+    async function saveClassForm(e) {
+        e.preventDefault();
+        const classId = document.getElementById('formClassId').value;
+        const payload = {
+            title: document.getElementById('formTitle').value.trim(),
+            day_index: parseInt(document.getElementById('formDayIndex').value),
+            start_time: document.getElementById('formStartTime').value.trim(),
+            end_time: document.getElementById('formEndTime').value.trim(),
+            location: document.getElementById('formLocation').value.trim(),
+            color: document.getElementById('formColor').value
+        };
+
+        try {
+            if (classId) {
+                // Update
+                const res = await fetch(`/api/classes/${classId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Ders güncellendi.', 'success');
+                }
+            } else {
+                // Add
+                const res = await fetch('/api/classes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Yeni ders eklendi.', 'success');
+                }
+            }
+            closeClassModal();
+            loadMySchedule();
+        } catch (err) {
+            showToast('Kaydetme hatası.', 'error');
+        }
+    }
+
+    async function deleteCurrentClass() {
+        const classId = document.getElementById('formClassId').value;
+        if (!classId) return;
+
+        if (!confirm('Bu dersi silmek istediğinizden emin misiniz?')) return;
+
+        try {
+            const res = await fetch(`/api/classes/${classId}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Ders silindi.', 'info');
+                closeClassModal();
+                loadMySchedule();
+            }
+        } catch (err) {
+            showToast('Silme hatası.', 'error');
+        }
+    }
+
+    async function clearAllClasses() {
+        if (!confirm('Tüm ders programınızı silmek istediğinize emin misiniz?')) return;
+        try {
+            const res = await fetch('/api/schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ classes: [] })
+            });
+            if (res.ok) {
+                showToast('Tüm dersler temizlendi.', 'info');
+                loadMySchedule();
+            }
+        } catch (err) {
+            showToast('Temizleme hatası.', 'error');
+        }
+    }
+
+    // Modal 3: Presets
+    function openPresetsModal() {
+        document.getElementById('presetsModal').classList.remove('hidden');
+    }
+    function closePresetsModal() {
+        document.getElementById('presetsModal').classList.add('hidden');
+    }
+
+    async function loadPresetSchedule(key) {
+        try {
+            const res = await fetch('/api/schedule/load-sample', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ key })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                closePresetsModal();
+                loadMySchedule();
+            }
+        } catch (err) {
+            showToast('Şablon yüklenirken hata oluştu.', 'error');
+        }
+    }
+
+    function fillSampleSuisText() {
+        const sample = `Monday
+MATH 203R-B4
+13053 Class
+9:40 am-10:30 am
+FENS G015
+
+DSA 440-0
+13509 Class
+12:40 pm-1:30 pm
+FENS L045
+
+CS 204-0
+10218 Class
+4:40 pm-6:30 pm
+FENS G077
+
+Tuesday
+HUM 201-0
+10660 Class
+12:40 pm-2:30 pm
+FASS G062
+
+MATH 204-0
+10902 Class
+2:40 pm-3:30 pm
+FENS G077
+
+Wednesday
+MATH 203-A
+10874 Class
+8:40 am-9:30 am
+FMAN G071
+
+CS 303-A
+10119 Class
+9:40 am-10:30 am
+UC G030
+
+CS 303L-C1
+10122 Class
+10:40 am-12:30 pm
+FENS 1033
+
+CS 204-0
+10218 Class
+12:40 pm-1:30 pm
+FMAN G071
+
+Thursday
+MATH 204-0
+10902 Class
+10:40 am-12:30 pm
+FENS G077
+
+CS 303-A
+10119 Class
+12:40 pm-2:30 pm
+UC G030
+
+HUM 201D-C2
+13110 Class
+2:40 pm-3:30 pm
+FASS 1011
+
+DSA 440-0
+13509 Class
+3:40 pm-5:30 pm
+FENS L045
+
+MATH 204R-A2
+10905 Class
+5:40 pm-6:30 pm
+FASS 1097
+
+Friday
+MATH 203-A
+10874 Class
+8:40 am-10:30 am
+FMAN G071
+
+CS 204L-A2
+10222 Class
+10:40 am-12:30 pm
+FENS L058`;
+        document.getElementById('pasteTextArea').value = sample;
+        showToast('Sabancı (SUIS) 16 derslik örnek metin yapıştırıldı. "Dersleri Çıkar ve Ekle"ye basabilirsiniz.', 'info');
+    }
+</script>
+{% endblock %}

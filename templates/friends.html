@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Arkadaşlar - Blöf-MüsaitlikTakip{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+    
+    <!-- Header -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 mb-2">
+                    <i class="fa-solid fa-user-group"></i>
+                    <span>Ortak Arkadaş Havuzu</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Arkadaş Grubu & Kullanıcı Yönetimi
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">
+                    Gruptaki tüm üyeleri inceleyebilir, programlarını görüntüleyebilir veya istemediğiniz hesapları silebilirsiniz.
+                </p>
+            </div>
+
+            <div class="flex items-center space-x-2.5">
+                <span id="friendsCountBadge" class="px-3.5 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl">
+                    0 Arkadaş Kayıtlı
+                </span>
+                <button onclick="clearDemoAccounts()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl transition flex items-center space-x-1.5" title="Hazır demo hesapları temizler">
+                    <i class="fa-solid fa-user-xmark"></i>
+                    <span class="hidden sm:inline">Demoları Temizle</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Friends Grid -->
+    <div id="friendsListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Filled dynamically -->
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFriends();
+    });
+
+    async function loadFriends() {
+        const container = document.getElementById('friendsListGrid');
+        container.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>Arkadaşlar yükleniyor...</p></div>';
+
+        try {
+            const res = await fetch('/api/all-friends');
+            const data = await res.json();
+            const friends = data.friends || [];
+
+            document.getElementById('friendsCountBadge').textContent = `${friends.length} Arkadaş Kayıtlı`;
+
+            if (friends.length === 0) {
+                container.innerHTML = '<p class="col-span-full text-center py-8 text-slate-400">Henüz kayıtlı üye bulunmuyor.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            for (let f of friends) {
+                let count = 0;
+                try {
+                    const cRes = await fetch(`/api/schedule/${f.id}`);
+                    const cData = await cRes.json();
+                    count = (cData.classes || []).length;
+                } catch(e) {}
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-6 border border-slate-200 shadow-md shadow-slate-200/50 hover:shadow-lg transition-all flex flex-col justify-between";
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3.5 min-w-0">
+                                <div class="w-13 h-13 rounded-2xl flex items-center justify-center text-white font-extrabold text-base shadow-sm shrink-0" style="background-color: ${f.avatar_color || '#4F46E5'};">
+                                    ${f.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-base font-extrabold text-slate-900 truncate">${f.name}</h3>
+                                    <p class="text-xs text-slate-400 truncate">${f.email}</p>
+                                </div>
+                            </div>
+                            <!-- Delete User Button -->
+                            <button onclick="confirmDeleteUser(${f.id}, '${f.name}')" title="${f.name} kullanıcısını sil"
+                                    class="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
+                                <i class="fa-regular fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+
+                        <div class="mb-2">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${count > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                                ${count > 0 ? `${count} Ders Kayıtlı` : 'Program Eklenmemiş'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between mt-4">
+                        <span class="text-[11px] text-slate-400 font-medium">
+                            <i class="fa-regular fa-calendar mr-1"></i> ${new Date(f.created_at).toLocaleDateString('tr-TR')}
+                        </span>
+                        <button onclick="openFriendScheduleModal(${f.id}, '${f.name}', '${f.avatar_color}')"
+                                class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs rounded-xl transition flex items-center space-x-1">
+                            <span>Programı Gör</span>
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            }
+        } catch (err) {
+            container.innerHTML = '<div class="col-span-full py-8 text-center text-rose-500">Arkadaş listesi alınamadı.</div>';
+        }
+    }
+
+    async function confirmDeleteUser(userId, userName) {
+        if (!confirm(`'${userName}' kullanıcısını ve tüm ders programını sistemden silmek istediğinize emin misiniz?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'info');
+                if (data.is_self) {
+                    window.location.href = '/login';
+                } else {
+                    loadFriends();
+                }
+            } else {
+                showToast(data.error || 'Silme işlemi başarısız.', 'error');
+            }
+        } catch (err) {
+            showToast('Sunucu bağlantı hatası oluştu.', 'error');
+        }
+    }
+
+    async function clearDemoAccounts() {
+        if (!confirm('Ahmet, Zeynep, Burak ve Ayşe demo hesaplarını silmek istediğinize emin misiniz?')) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/users/clear-demos', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                loadFriends();
+            } else {
+                showToast(data.error || 'İşlem başarısız.', 'error');
+            }
+        } catch (err) {
+            showToast('Sunucu hatası oluştu.', 'error');
+        }
+    }
+</script>
+{% endblock %}

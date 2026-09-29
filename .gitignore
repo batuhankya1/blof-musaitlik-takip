@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node & OCR geçici dosyaları
+node_modules/
+eng.traineddata
+temp_ocr/
+temp_upload.png
+
+# Ortam ve gizli anahtarlar
+.secret_key
+.env
+.vercel/
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
